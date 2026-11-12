@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ล่าบอสตารางความจริง</title>
+<title>ล่าบอสตารางความจริง (กราฟิก)</title>
 <style>
 :root{
   --bg:#f6efdc; --paper:#fffaf0; --ink:#2a2118; --muted:#6f6350; --line:#d9ccae;
@@ -38,9 +38,11 @@ kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-
 
 /* ---- game ---- */
 .game-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-.lv{border:2px solid var(--ink);background:var(--paper);border-radius:10px;padding:8px 14px;font-weight:600}
+.lv{border:2px solid var(--ink);background:var(--paper);border-radius:10px;padding:6px 12px;font-weight:600;font-size:16px}
 .lv.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .lv.mode.on{background:var(--blue);border-color:var(--blue)}
+.lv.diff.on{background:var(--T);border-color:var(--T)}
+.reason{margin-top:4px;font-size:clamp(20px,3.4vh,28px);color:var(--accent);font-weight:600}
 .btn.ansT,.btn.ansF{min-width:210px;font-size:40px;font-weight:700}
 .btn.ansT{background:#dce8fa;border-color:var(--blue);color:var(--blue)}
 .btn.ansF{background:#f6e6c4;border-color:var(--accent);color:var(--accent)}
@@ -56,18 +58,18 @@ kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-
 .hp .adj{border:1px solid var(--line);background:#fff;border-radius:6px;width:28px;height:28px;font-weight:700;margin-left:4px}
 .hp.boss{text-align:right}.hp.boss .bar{justify-content:flex-end}
 .qcount{font-weight:700;font-size:18px;color:var(--muted);text-align:center}
-.play{display:grid;grid-template-columns:1fr;gap:12px}
-.play.withhook{grid-template-columns:1fr 300px}
+.play{display:grid;grid-template-columns:1fr 330px;gap:12px}
+.play.withhook{grid-template-columns:1fr 330px}
 .stage{background:var(--paper);border:3px solid var(--ink);border-radius:18px;min-height:clamp(250px,calc(100vh - 460px),520px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 20px;text-align:center}
 .qn{color:var(--muted);font-size:18px;margin-bottom:2px}
-.expr{font-size:clamp(70px,16vh,130px);font-weight:700;line-height:1.1;letter-spacing:.04em}
+.expr{font-size:clamp(56px,13vh,120px);font-weight:700;line-height:1.05;letter-spacing:.04em}
 .expr.small{font-size:clamp(44px,9vh,72px)}
 .expr .op{color:var(--blue);padding:0 .1em}
 .v.T{color:var(--T)}.v.F{color:var(--F)}
-.opname{font-size:26px;color:var(--muted);margin-top:4px}
+.opname{font-size:clamp(18px,3.4vh,26px);color:var(--muted);margin-top:2px}
 .line2{font-size:48px;font-weight:700;margin-top:6px}
 .ask{font-size:60px;font-weight:700;color:var(--accent);margin-top:8px}
-.status{margin-top:10px;font-size:34px;font-weight:700;min-height:56px}
+.status{margin-top:6px;font-size:clamp(24px,4.6vh,34px);font-weight:700;min-height:40px}
 .status.think{color:var(--muted)}
 .status.count{font-size:80px;color:var(--accent);line-height:1}
 .status.show{color:var(--blue);font-size:40px}
@@ -144,9 +146,63 @@ textarea{min-height:140px}
 #modalBody h3{margin:0 0 10px}
 .err{color:var(--F);min-height:24px;font-size:16px}
 
+
+/* ===== FX: กราฟิกโจมตีบอส ===== */
+#fx{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.battle{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 10px 10px;border:3px solid var(--ink);border-radius:18px;background:linear-gradient(180deg,#fbf2d8 0%,#ecd8a2 68%,#cdb27a 100%);overflow:hidden;min-height:260px}
+.bossname{font-weight:700;font-size:18px}
+.bossbar{width:92%;height:16px;border-radius:9px;border:2px solid var(--ink);background:#e9dcc0;overflow:hidden}
+.bossbar i{display:block;height:100%;width:100%;background:linear-gradient(180deg,#e8564a,#b3261e);transition:width .35s ease-out}
+.bossbox{position:relative;width:min(240px,92%);animation:bob 2.4s ease-in-out infinite;margin-top:4px}
+.bossshadow{position:absolute;left:18%;right:18%;bottom:-6px;height:14px;border-radius:50%;background:rgba(42,33,24,.25);filter:blur(2px)}
+.boss{position:relative;transition:filter .2s}
+.boss svg{display:block;width:100%;height:auto;max-height:clamp(120px,27vh,215px)}
+.boss .mouth-h,.boss .eyes-h,.boss .brows{display:none}
+.boss.hit .eyes-n,.boss.hit .mouth-n{display:none}
+.boss.hit .eyes-h,.boss.hit .mouth-h{display:inline}
+.boss.rage:not(.hit) .brows{display:inline}
+.boss .rune{filter:drop-shadow(0 0 5px #5ee0f0)}
+.boss.rage{filter:drop-shadow(0 0 10px rgba(230,50,40,.85));animation:shiver .5s infinite alternate}
+.boss.hit{animation:hitshake .4s,hitflash .4s}
+.boss.defeated{animation:die 1s ease-in forwards}
+.slash{position:absolute;left:8%;top:38%;width:84%;height:9px;border-radius:5px;background:linear-gradient(90deg,transparent,#fff,transparent);box-shadow:0 0 14px #fff;transform:rotate(-35deg) scaleX(0);opacity:0}
+.slash.go{animation:slash .32s ease-out}
+.party{display:flex;gap:12px;align-items:flex-end;padding-top:2px}
+.party.ouch{animation:ouch .5s}
+.party.down{filter:grayscale(1);opacity:.45;transition:all .5s}
+.orb{position:absolute;width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#ffd34d 45%,#ff8a3d 80%);box-shadow:0 0 26px 12px rgba(255,170,60,.65)}
+.dot{position:absolute;width:14px;height:14px;border-radius:50%;background:rgba(255,190,80,.75);transform:translate(-50%,-50%)}
+.pt{position:absolute;width:11px;height:11px;border-radius:50%}
+.float{position:absolute;font-weight:800;font-size:46px;white-space:nowrap;text-shadow:0 3px 0 #2a2118,0 0 10px rgba(0,0,0,.6)}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 38%,rgba(205,20,20,.7));opacity:0}
+.conf{position:absolute;width:11px;height:17px;top:-20px}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes shiver{from{transform:translateX(-2px)}to{transform:translateX(2px)}}
+@keyframes hitshake{0%{transform:translateX(0)}20%{transform:translateX(14px) rotate(3deg)}40%{transform:translateX(-12px) rotate(-3deg)}60%{transform:translateX(8px)}80%{transform:translateX(-4px)}100%{transform:translateX(0)}}
+@keyframes hitflash{0%{filter:brightness(2.4) saturate(.5)}100%{filter:none}}
+@keyframes die{0%{transform:scale(1);opacity:1}25%{transform:translateX(10px) scale(1.04)}45%{transform:translateX(-10px) scale(1.04)}100%{transform:translateY(30px) scale(.1) rotate(35deg);opacity:0}}
+@keyframes slash{0%{transform:rotate(-35deg) scaleX(0);opacity:1}60%{transform:rotate(-35deg) scaleX(1);opacity:1}100%{transform:rotate(-35deg) scaleX(1);opacity:0}}
+@keyframes ouch{0%,100%{transform:translateX(0);filter:none}20%{transform:translateX(-10px);filter:sepia(1) saturate(6) hue-rotate(-30deg)}50%{transform:translateX(8px)}80%{transform:translateX(-4px)}}
+/* ===== FX: บอสเลือดน้อย (โมโห) ===== */
+.aura{position:absolute;inset:-14% -10%;border-radius:50%;background:radial-gradient(circle,rgba(235,60,40,.6),rgba(235,60,40,0) 68%);opacity:0;transition:opacity .4s;pointer-events:none;z-index:0}
+.bossbox.rage .aura{opacity:1;animation:aurapulse .9s ease-in-out infinite}
+.boss{z-index:1}
+.battle.low .bossname{color:#b3261e;animation:blinkname 1s ease-in-out infinite}
+.battle.low .bossbar{border-color:#b3261e;box-shadow:0 0 10px rgba(230,50,40,.85)}
+.battle.low .bossbar i{animation:barblink .7s ease-in-out infinite}
+.lastpill{display:none;background:#ffd34d;border:2px solid var(--ink);border-radius:999px;padding:0 12px;font-weight:800;font-size:15px;animation:pillpop .55s ease-in-out infinite alternate}
+.battle.last .lastpill{display:block}
+.ring{position:absolute;width:120px;height:120px;border:6px solid rgba(235,60,40,.9);border-radius:50%}
+.ember{position:absolute;border-radius:50%}
+@keyframes aurapulse{0%,100%{transform:scale(.92);opacity:.65}50%{transform:scale(1.08);opacity:1}}
+@keyframes blinkname{50%{opacity:.5}}
+@keyframes barblink{50%{filter:brightness(1.7)}}
+@keyframes pillpop{from{transform:scale(1)}to{transform:scale(1.12)}}
+
 @media (max-width:900px){
   .expr{font-size:72px}.expr.small{font-size:46px}
-  .play.withhook{grid-template-columns:1fr}
+  .play,.play.withhook{grid-template-columns:1fr}
   .hp-row{grid-template-columns:1fr}.hp.boss{text-align:left}.hp.boss .bar{justify-content:flex-start}
 }
 </style>
@@ -167,6 +223,7 @@ textarea{min-height:140px}
   <section id="view-station" hidden></section>
   <section id="view-results" hidden></section>
 </main>
+<div id="fx"></div>
 <div id="modal" hidden><div id="modalBody"></div></div>
 
 <script>
@@ -228,12 +285,21 @@ function askConfirm(msg,cb){
 
 /* ================= GAME ================= */
 const LV={
-  1:{name:'รอบ 1 · วอร์มอัป',ops:['not','and','or'],boss:6,hook:true,rev:false},
+  1:{name:'รอบ 1 · วอร์มอัป',ops:['not','and','or'],boss:6,hook:false,rev:false},
   2:{name:'รอบ 2 · สู้บอส (มีนิเสธปน)',ops:ALL,boss:8,hook:false,rev:false,neg:0.35,cls:2},
   3:{name:'รอบ 3 · บอสตัวจริง (ย้อนกลับ)',ops:ALL,boss:4,hook:false,rev:true}
 };
-const game={level:1,deck:[],cur:null,phase:'idle',cls:5,clsMax:5,boss:6,bossMax:6,qn:0,hook:true,thai:true,count:0,tick:null,win:false,
-  mode:'gesture',penalty:false,stats:{right:0,total:0,ms:0},t0:0,ans:[],last:null,pendingOver:false,mix:[],negDeck:[]};
+/* โหมดง่าย (ห้องท้าย): ไม่มีนิเสธปน, มีบรรทัดอธิบายหลังเฉลย, รอบ 3 ใช้เฉพาะโจทย์แถวพิเศษ
+   รอบ 2: HP ห้อง/บอส เท่าระดับยาก (2 / 8) */
+const EASY={
+  1:{boss:5,cls:5,hook:false},
+  2:{name:'รอบ 2 · สู้บอส',boss:8,cls:2,hook:false,neg:0},
+  3:{boss:3,cls:5,hook:false,easyRev:true}
+};
+const lvc=l=>game.diff==='easy'?Object.assign({},LV[l],EASY[l]):LV[l];
+const game={level:1,deck:[],cur:null,phase:'idle',cls:5,clsMax:5,boss:6,bossMax:6,qn:0,hook:false,thai:true,count:0,tick:null,win:false,
+  mode:'gesture',penalty:false,stats:{right:0,total:0,ms:0},t0:0,ans:[],last:null,pendingOver:false,mix:[],negDeck:[],
+  diff:(store.get('logic.diff','normal')==='easy'?'easy':'normal')};
 
 function fwdDeck(level){
   const c=[];
@@ -247,7 +313,7 @@ function fwdDeck(level){
   });
   return shuffle(c);
 }
-function revDeck(){
+function revDeck(easy){
   const c=[],B=[true,false];
   ALL.forEach(op=>{
     const o=OPS[op];
@@ -267,7 +333,8 @@ function revDeck(){
       });
     });
   });
-  return shuffle(c);
+  // โหมดง่าย: เอาเฉพาะโจทย์ที่ไม่บอกค่าใดเลย (แถวพิเศษ: ∧=T, ∨=F, →=F และ ¬)
+  return shuffle(easy?c.filter(x=>Object.keys(x.known).length===0):c);
 }
 function evalFwd(c){
   const o=OPS[c.op];
@@ -312,7 +379,7 @@ function answerHTML(c){
   return c.ask.map(k=>`${k} = <span class="v ${tv(c.ans[k])}" style="font-size:1.4em">${tv(c.ans[k])}</span>`).join(' , ');
 }
 function draw(){
-  const lv=LV[game.level];let card=null;
+  const lv=lvc(game.level);let card=null;
   if(lv.neg){
     // ปนโจทย์มีนิเสธราว 1 ใน 3 แต่ไม่ติดกันเกิน 2 ข้อ และไม่ห่างเกิน 3 ข้อ
     const h=game.mix;let useNeg=Math.random()<lv.neg;
@@ -321,7 +388,7 @@ function draw(){
     if(useNeg){if(!game.negDeck.length)game.negDeck=negDeck();card=game.negDeck.pop();}
   }
   if(!card){
-    if(!game.deck.length)game.deck=lv.rev?revDeck():fwdDeck(game.level);
+    if(!game.deck.length)game.deck=lv.rev?revDeck(lv.easyRev):fwdDeck(game.level);
     card=game.deck.pop();
   }
   game.mix.push(!!card.neg);
@@ -330,12 +397,25 @@ function draw(){
 }
 function setLevel(l){
   clearTimeout(game.tick);
-  const hpCls=LV[l].cls||5; // HP ห้องของแต่ละรอบ (รอบ 2 = 2)
-  Object.assign(game,{level:l,deck:[],cur:null,phase:'idle',cls:hpCls,clsMax:hpCls,boss:LV[l].boss,bossMax:LV[l].boss,qn:0,hook:LV[l].hook,
+  const C=lvc(l),hpCls=C.cls||5; // HP ห้องของแต่ละรอบ (ปกติ: รอบ 2 = 2)
+  Object.assign(game,{level:l,deck:[],cur:null,phase:'idle',cls:hpCls,clsMax:hpCls,boss:C.boss,bossMax:C.boss,qn:0,hook:C.hook,
     stats:{right:0,total:0,ms:0},ans:[],last:null,pendingOver:false,mix:[],negDeck:[]});
   renderGame();
 }
 function setMode(m){game.mode=m;setLevel(game.level);}
+function setDiff(d){game.diff=(d==='easy')?'easy':'normal';store.set('logic.diff',game.diff);setLevel(game.level);}
+function reasonLine(c){
+  if(game.diff!=='easy'||c.kind!=='f'||c.neg)return '';
+  const a=evalFwd(c);
+  const R={
+    not:'กลับค่า',
+    and:a?'ทั้งคู่เป็น T':'มี F อย่างน้อยหนึ่งตัว',
+    or:a?'มี T อย่างน้อยหนึ่งตัว':'ทั้งคู่เป็น F',
+    imp:a?(c.p?'ทำตามสัญญาแล้ว':'เงื่อนไขหน้าไม่เกิด → ไม่ผิดสัญญา'):'ผิดสัญญา! (T → F)',
+    iff:a?'ค่าเหมือนกัน':'ค่าต่างกัน'
+  };
+  return `<div class="reason">💡 ${R[c.op]}</div>`;
+}
 /* โหมดกดเอง: นักเรียนออกมากด T/F ระบบตรวจให้เอง */
 function answerPress(v){
   const g=game;
@@ -349,7 +429,9 @@ function answerPress(v){
   g.stats.total++;g.stats.ms+=ms;if(ok)g.stats.right++;
   if(ok)g.boss=Math.max(0,g.boss-1);else if(g.penalty)g.cls=Math.max(0,g.cls-1);
   g.pendingOver=(g.boss===0||g.cls===0);g.win=(g.boss===0);
-  g.phase='reveal';paintGame();
+  g.phase='reveal';
+  FX.result(ok?1:(g.penalty?-1:-2),g.pendingOver,g.win);
+  paintGame();
 }
 function advancePress(){
   const g=game;
@@ -369,7 +451,7 @@ function pressStatus(){
   if(g.phase==='reveal'){
     const L=g.last;
     const eff=L.ok?'บอสเสีย 1 HP':(g.penalty?'ห้องเสีย 1 HP':'ไม่เสียอะไร — ไปข้อต่อไป');
-    return `<div class="status answer">${L.ok?'<span class="v T">✅ ถูกต้อง!</span>':'<span class="v F">❌ ยังไม่ถูก</span>'} &nbsp; คำตอบ: ${answerHTML(c)}</div><div class="muted" style="font-size:20px">${eff} · ใช้เวลา ${(L.ms/1000).toFixed(1)} วินาที</div>`;
+    return `<div class="status answer">${L.ok?'<span class="v T">✅ ถูกต้อง!</span>':'<span class="v F">❌ ยังไม่ถูก</span>'} &nbsp; คำตอบ: ${answerHTML(c)}</div><div class="muted" style="font-size:20px">${eff} · ใช้เวลา ${(L.ms/1000).toFixed(1)} วินาที</div>${reasonLine(c)}`;
   }
   return '';
 }
@@ -403,6 +485,7 @@ function score(d){
   if(d<0)g.cls=Math.max(0,g.cls-1);
   if(g.boss===0||g.cls===0){g.phase='over';g.win=g.boss===0;}
   else draw();
+  FX.result(d>0?1:(d<0?-1:0),g.phase==='over',g.win);
   paintGame();
 }
 function adjHP(who,d){
@@ -414,7 +497,7 @@ function adjHP(who,d){
 function bar(n,max){let h='';for(let i=0;i<max;i++)h+=`<span class="blk ${i<n?'on':''}"></span>`;return h;}
 function stageHTML(){
   const g=game,c=g.cur;
-  if(g.phase==='idle')return `<div class="msg">พร้อมสู้ <b>${LV[g.level].name}</b> หรือยัง?<small>กด <kbd>Space</kbd> เพื่อเริ่มข้อแรก</small></div>`;
+  if(g.phase==='idle')return `<div class="msg">พร้อมสู้ <b>${lvc(g.level).name}</b> หรือยัง?<small>กด <kbd>Space</kbd> เพื่อเริ่มข้อแรก</small></div>`;
   if(g.phase==='over')return g.win?`<div class="msg win">🏆 ห้องชนะบอส!<small>กด <kbd>Space</kbd> เพื่อเล่นรอบนี้ใหม่</small></div>`:`<div class="msg lose">💀 ห้องพ่ายแพ้… ลองแก้มืออีกรอบ!<small>กด <kbd>Space</kbd> เพื่อเล่นรอบนี้ใหม่</small></div>`;
   let st='';
   if(g.mode==='press')st=pressStatus();
@@ -422,7 +505,7 @@ function stageHTML(){
     if(g.phase==='problem')st='<div class="status think">คิดในใจ… (ยังไม่ต้องชู)</div>';
     if(g.phase==='count')st=`<div class="status count">${g.count}</div>`;
     if(g.phase==='show')st='<div class="status show">ชู! &nbsp; 🙌 = T &nbsp;&nbsp; ❌ = F</div>';
-    if(g.phase==='reveal')st=`<div class="status answer">คำตอบ: ${answerHTML(c)}</div>`;
+    if(g.phase==='reveal')st=`<div class="status answer">คำตอบ: ${answerHTML(c)}</div>${reasonLine(c)}`;
   }
   return `<div class="qn">ข้อที่ ${g.qn}</div>${exprHTML(c)}${st}`;
 }
@@ -447,12 +530,17 @@ function renderGame(){
   const g=game;
   $('#view-game').innerHTML=`
     <div class="game-top">
-      <div class="row">${[1,2,3].map(l=>`<button class="lv ${g.level===l?'on':''}" data-act="lv" data-lv="${l}">${LV[l].name}</button>`).join('')}</div>
+      <div class="row">${[1,2,3].map(l=>`<button class="lv ${g.level===l?'on':''}" data-act="lv" data-lv="${l}">${lvc(l).name}</button>`).join('')}</div>
       <div class="row">
         <button class="lv mode ${g.mode==='gesture'?'on':''}" data-act="setmode" data-mode="gesture">🙌 ท่าทาง (ทั้งห้อง)</button>
         <button class="lv mode ${g.mode==='press'?'on':''}" data-act="setmode" data-mode="press">👆 กดเอง (ทีละคน)</button>
       </div>
+      <div class="row">
+        <button class="lv diff ${g.diff==='normal'?'on':''}" data-act="setdiff" data-diff="normal">ระดับยาก</button>
+        <button class="lv diff ${g.diff==='easy'?'on':''}" data-act="setdiff" data-diff="easy">🌱 ง่าย (ห้องท้าย)</button>
+      </div>
       <div class="toggles">
+        <label><input type="checkbox" id="optSnd" ${FX.snd?'checked':''}> 🔊 เสียง</label>
         <label id="penLbl" ${g.mode==='press'?'':'hidden'}><input type="checkbox" id="optPen" ${g.penalty?'checked':''}> ตอบผิดแล้วห้องเสีย HP</label>
         <label><input type="checkbox" id="optHook" ${g.hook?'checked':''}> โปสเตอร์ช่วยจำ</label>
         <label><input type="checkbox" id="optThai" ${g.thai?'checked':''}> ชื่อตัวเชื่อม</label>
@@ -462,11 +550,13 @@ function renderGame(){
     <div class="play" id="play"><div><div class="stage" id="stage"></div>
       <div class="legend" id="legend"></div>
       <div class="controls" id="controls"></div></div>
-      <aside class="poster" id="poster"></aside></div>`;
+      <aside class="side"><div class="battle" id="battle"></div><div class="poster" id="poster"></div></aside></div>`;
   // blur หลังติ๊ก เพื่อไม่ให้ Space/T/F ไปตกที่ช่องติ๊ก
   $('#optHook').onchange=e=>{g.hook=e.target.checked;e.target.blur();paintGame();};
   $('#optThai').onchange=e=>{g.thai=e.target.checked;e.target.blur();paintGame();};
   $('#optPen').onchange=e=>{g.penalty=e.target.checked;e.target.blur();paintGame();};
+  $('#optSnd').onchange=e=>{FX.snd=e.target.checked;store.set('logic.snd',FX.snd);e.target.blur();if(FX.snd)FX.sfx('cast');};
+  FX.mount();
   paintGame();
 }
 function paintGame(){
@@ -477,14 +567,254 @@ function paintGame(){
     :'ตอบด้วยท่าทาง: <b>T = 🙌 ยกมือสองข้าง</b> &nbsp;|&nbsp; <b>F = ❌ ไขว้แขนเป็นกากบาท</b>';
   $('#hprow').innerHTML=
     `<div class="hp cls"><h4>🛡️ HP ห้อง <button class="adj" data-act="hp" data-who="cls" data-d="-1">−</button><button class="adj" data-act="hp" data-who="cls" data-d="1">+</button></h4><div class="bar">${bar(g.cls,g.clsMax)}</div></div>
-     <div class="qcount">${LV[g.level].rev?'โจทย์ย้อนกลับ':'ดูแล้วตอบไว'}${sTxt}</div>
+     <div class="qcount">${lvc(g.level).rev?'โจทย์ย้อนกลับ':'ดูแล้วตอบไว'}${g.diff==='easy'?'<br><small>🌱 โหมดง่าย</small>':''}${sTxt}</div>
      <div class="hp boss"><h4>👹 HP บอส <button class="adj" data-act="hp" data-who="boss" data-d="-1">−</button><button class="adj" data-act="hp" data-who="boss" data-d="1">+</button></h4><div class="bar">${bar(g.boss,g.bossMax)}</div></div>`;
   $('#stage').innerHTML=stageHTML();
   $('#controls').innerHTML=controlsHTML();
   $('#poster').innerHTML=posterHTML();
   $('#poster').hidden=!g.hook;
   $('#play').classList.toggle('withhook',g.hook);
+  FX.sync();
 }
+
+/* ================= FX (กราฟิกโจมตีบอส) ================= */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const BOSSES={
+  1:{name:'สไลม์ตัวแปร',svg:`<svg viewBox="0 0 200 170" xmlns="http://www.w3.org/2000/svg">
+<defs><radialGradient id="slg" cx="38%" cy="28%" r="75%"><stop offset="0" stop-color="#d7ff9a"/><stop offset=".55" stop-color="#6fd068"/><stop offset="1" stop-color="#2f8f48"/></radialGradient></defs>
+<path d="M18 142 C6 92 48 28 100 28 C152 28 194 92 182 142 C180 158 158 162 100 162 C42 162 20 158 18 142Z" fill="url(#slg)" stroke="#1d5a2c" stroke-width="5" stroke-linejoin="round"/>
+<ellipse cx="68" cy="58" rx="20" ry="10" fill="#fff" opacity=".6" transform="rotate(-32 68 58)"/><circle cx="150" cy="80" r="5" fill="#fff" opacity=".5"/>
+<g class="eyes-n"><ellipse cx="74" cy="96" rx="15" ry="17" fill="#fff" stroke="#1d5a2c" stroke-width="3"/><ellipse cx="126" cy="96" rx="15" ry="17" fill="#fff" stroke="#1d5a2c" stroke-width="3"/><circle cx="78" cy="100" r="7" fill="#1b1b1b"/><circle cx="122" cy="100" r="7" fill="#1b1b1b"/><circle cx="80" cy="97" r="2.5" fill="#fff"/><circle cx="124" cy="97" r="2.5" fill="#fff"/></g>
+<g class="eyes-h" stroke="#1b1b1b" stroke-width="6" stroke-linecap="round"><path d="M62 84 L88 108 M88 84 L62 108"/><path d="M112 84 L138 108 M138 84 L112 108"/></g>
+<g class="brows" stroke="#7a1010" stroke-width="7" stroke-linecap="round"><path d="M56 72 L90 86"/><path d="M144 72 L110 86"/></g>
+<path class="mouth-n" d="M82 130 Q100 146 118 130" fill="none" stroke="#1d5a2c" stroke-width="6" stroke-linecap="round"/>
+<ellipse class="mouth-h" cx="100" cy="134" rx="10" ry="9" fill="#1d3a22"/></svg>`},
+  2:{name:'โกเล็มตัวเชื่อม',svg:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<g stroke="#34302a" stroke-width="5" stroke-linejoin="round">
+<rect x="60" y="158" width="32" height="36" rx="8" fill="#7d776a"/><rect x="108" y="158" width="32" height="36" rx="8" fill="#7d776a"/>
+<rect x="16" y="76" width="38" height="66" rx="12" fill="#8f897a"/><rect x="146" y="76" width="38" height="66" rx="12" fill="#8f897a"/>
+<rect x="10" y="134" width="50" height="38" rx="12" fill="#a29c8b"/><rect x="140" y="134" width="50" height="38" rx="12" fill="#a29c8b"/>
+<rect x="52" y="66" width="96" height="98" rx="14" fill="#9a9484"/><rect x="72" y="14" width="56" height="54" rx="12" fill="#aaa493"/></g>
+<path d="M62 84 l16 10 l-8 14 M138 148 l-14 -10 l8 -14" fill="none" stroke="#5c574b" stroke-width="3.5" stroke-linecap="round"/>
+<circle class="rune" cx="100" cy="116" r="22" fill="#12343c" stroke="#5ee0f0" stroke-width="4"/>
+<text x="100" y="126" text-anchor="middle" font-size="28" font-weight="700" fill="#7ff0ff" font-family="sans-serif">∧</text>
+<g class="eyes-n"><rect x="82" y="34" width="14" height="10" rx="3" fill="#5ee0f0"/><rect x="104" y="34" width="14" height="10" rx="3" fill="#5ee0f0"/></g>
+<g class="eyes-h" stroke="#5ee0f0" stroke-width="5" stroke-linecap="round"><path d="M82 30 L96 46 M96 30 L82 46"/><path d="M104 30 L118 46 M118 30 L104 46"/></g>
+<g class="brows" stroke="#7a1010" stroke-width="6" stroke-linecap="round"><path d="M78 26 L98 34"/><path d="M122 26 L102 34"/></g>
+<rect x="84" y="54" width="32" height="6" rx="3" fill="#4a463d"/></svg>`},
+  3:{name:'มังกรนิเสธ',svg:`<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+<g stroke="#2a1445" stroke-width="5" stroke-linejoin="round">
+<path d="M72 96 L8 38 L28 98 L4 104 L44 124 L74 128Z" fill="#7a4cc0"/><path d="M148 96 L212 38 L192 98 L216 104 L176 124 L146 128Z" fill="#7a4cc0"/>
+<path d="M146 152 C196 150 214 186 176 192 C196 176 168 168 142 170Z" fill="#6b3fa0"/>
+<ellipse cx="110" cy="136" rx="50" ry="54" fill="#8a5bd0"/><ellipse cx="110" cy="146" rx="28" ry="38" fill="#f0cf7a"/>
+<path d="M88 38 L72 6 L106 30Z" fill="#f4ead0"/><path d="M132 38 L148 6 L114 30Z" fill="#f4ead0"/>
+<circle cx="110" cy="74" r="38" fill="#9a69de"/><ellipse cx="110" cy="92" rx="22" ry="15" fill="#b283ee"/></g>
+<circle cx="102" cy="90" r="3" fill="#2a1445"/><circle cx="118" cy="90" r="3" fill="#2a1445"/>
+<g class="eyes-n"><ellipse cx="92" cy="66" rx="11" ry="9" fill="#ffe14d" stroke="#2a1445" stroke-width="3"/><ellipse cx="128" cy="66" rx="11" ry="9" fill="#ffe14d" stroke="#2a1445" stroke-width="3"/><rect x="90" y="59" width="4" height="14" rx="2" fill="#2a1445"/><rect x="126" y="59" width="4" height="14" rx="2" fill="#2a1445"/></g>
+<g class="eyes-h" stroke="#2a1445" stroke-width="5" stroke-linecap="round"><path d="M84 58 L100 74 M100 58 L84 74"/><path d="M120 58 L136 74 M136 58 L120 74"/></g>
+<g class="brows" stroke="#4a0a0a" stroke-width="6" stroke-linecap="round"><path d="M80 52 L102 62"/><path d="M140 52 L118 62"/></g>
+<path d="M96 104 L100 113 L104 104Z M116 104 L120 113 L124 104Z" fill="#fff" stroke="#2a1445" stroke-width="2"/>
+<text x="110" y="158" text-anchor="middle" font-size="34" font-weight="700" fill="#8a5a14" font-family="sans-serif">¬</text></svg>`}
+};
+const hero=(c,acc)=>`<svg viewBox="-8 0 56 56" width="48" height="54"><circle cx="20" cy="12" r="9" fill="#f1c9a0" stroke="#2a2118" stroke-width="2"/><path d="M8 52 L8 30 Q8 22 20 22 Q32 22 32 30 L32 52Z" fill="${c}" stroke="#2a2118" stroke-width="2"/>${acc}</svg>`;
+const HEROES=[
+  hero('#c0392b','<rect x="-4" y="26" width="13" height="19" rx="3" fill="#cfd6e4" stroke="#2a2118" stroke-width="2"/>'),
+  hero('#2f6fb3','<line x1="36" y1="8" x2="36" y2="52" stroke="#8a5a14" stroke-width="3"/><circle cx="36" cy="8" r="5" fill="#7ff0ff" stroke="#2a2118" stroke-width="2"/>'),
+  hero('#2f8f48','<path d="M34 16 Q46 34 34 52" fill="none" stroke="#8a5a14" stroke-width="3"/>')
+].join('');
+
+const FX={
+  pending:0,shown:0,ctx:null,
+  snd:store.get('logic.snd',true)!==false,
+  mount(){
+    const b=$('#battle');if(!b)return;
+    const B=BOSSES[game.level]||BOSSES[1];
+    FX.stopEmbers();FX.raged=false;
+    b.classList.remove('low','last');
+    b.innerHTML=`<div class="bossname">${B.name}</div><div class="lastpill">⚡ ตีอีกครั้งเดียว!</div><div class="bossbar"><i id="bossFill"></i></div>
+      <div class="bossbox" id="bossbox"><div class="aura"></div><div class="bossshadow"></div><div class="boss" id="boss">${B.svg}<div class="slash" id="slash"></div></div></div>
+      <div class="party" id="party">${HEROES}</div>`;
+    FX.pending=0;FX.shown=game.boss;FX.setBar();FX.rage();
+  },
+  setBar(){const f=$('#bossFill');if(f)f.style.width=Math.max(0,FX.shown/game.bossMax*100)+'%';},
+  /* เลือดบอสเหลือ ≤ 1 ใน 3 = โมโห (ออร่าแดง ไฟลุก หลอดเลือดกะพริบ); announce=true จะเล่นเอฟเฟกต์ตอนเพิ่งเข้าสู่โหมดโมโห */
+  rage(announce){
+    const bs=$('#boss'),bx=$('#bossbox'),bt=$('#battle');if(!bs)return;
+    const low=FX.shown>0&&FX.shown<=Math.ceil(game.bossMax/3);
+    const last=FX.shown===1&&game.bossMax>1;
+    bs.classList.toggle('rage',low);
+    if(bx)bx.classList.toggle('rage',low);
+    if(bt){bt.classList.toggle('low',low);bt.classList.toggle('last',last);}
+    const was=FX.raged;FX.raged=low;
+    if(low&&!was){FX.startEmbers();if(announce)FX.enrage();}
+    if(!low&&was)FX.stopEmbers();
+  },
+  startEmbers(){
+    FX.stopEmbers();
+    FX.emberTimer=setInterval(()=>{
+      const bs=$('#boss'),L=$('#fx');if(!bs||!L||document.hidden)return;
+      const r=bs.getBoundingClientRect();
+      const x=r.left+r.width*(0.2+Math.random()*0.6),y=r.top+r.height*(0.55+Math.random()*0.35),s=5+Math.random()*6;
+      const e=document.createElement('div');e.className='ember';
+      e.style.cssText=`left:${x}px;top:${y}px;width:${s}px;height:${s}px;background:${Math.random()<.5?'#ff7a3d':'#ffcf4d'};box-shadow:0 0 6px #ff6a2d`;
+      L.appendChild(e);
+      e.animate([{transform:'translate(0,0) scale(1)',opacity:.95},{transform:`translate(${(Math.random()-.5)*44}px,${-70-Math.random()*60}px) scale(.2)`,opacity:0}],{duration:900+Math.random()*500,easing:'ease-out'}).onfinish=()=>e.remove();
+    },140);
+  },
+  stopEmbers(){clearInterval(FX.emberTimer);FX.emberTimer=0;},
+  ring(x,y){
+    const L=$('#fx');if(!L)return;
+    const g=document.createElement('div');g.className='ring';g.style.left=x+'px';g.style.top=y+'px';L.appendChild(g);
+    g.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:1},{transform:'translate(-50%,-50%) scale(3.4)',opacity:0}],{duration:800,easing:'ease-out'}).onfinish=()=>g.remove();
+  },
+  enrage(){
+    const bs=$('#boss');if(!bs)return;
+    FX.sfx('rage');
+    bs.animate([{transform:'scale(1)'},{transform:'scale(1.25) rotate(-3deg)',offset:.3},{transform:'scale(1.15) rotate(3deg)',offset:.55},{transform:'scale(1)'}],{duration:700,easing:'ease-out'});
+    const r=bs.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    FX.ring(cx,cy);setTimeout(()=>FX.ring(cx,cy),180);
+    FX.float('⚠ โมโหแล้ว!',cx,r.top+r.height*0.05,'#ff6b5b',34);
+    FX.vignette();FX.shake();
+  },
+  sync(){
+    const bs=$('#boss'),pt=$('#party');if(!bs)return;
+    if(!(game.phase==='over'&&game.win)&&!(game.pendingOver&&game.win))bs.classList.remove('defeated');
+    if(pt&&!(game.phase==='over'&&!game.win)&&!(game.pendingOver&&!game.win))pt.classList.remove('down');
+    if(!FX.pending){FX.shown=game.boss;FX.setBar();FX.rage();}
+  },
+  /* d: 1 = โจมตีโดน, -1 = ห้องโดนโต้กลับ, -2 = พลาด (ไม่เสียอะไร), 0 = ไม่มีเอฟเฟกต์ */
+  result(d,over,win){
+    if(d>0)FX.hit(over,win);
+    else if(d===-1)FX.hurt(over,win);
+    else if(d===-2)FX.miss();
+  },
+  fly(past){
+    return new Promise(res=>{
+      const L=$('#fx'),st=$('#stage'),bs=$('#boss');
+      if(!L||!st||!bs){res();return;}
+      const a=st.getBoundingClientRect(),b=bs.getBoundingClientRect();
+      const x0=a.left+a.width*0.7,y0=a.top+a.height*0.5;
+      const x1=b.left+b.width/2+(past?160:0),y1=b.top+b.height*(past?0.35:0.5);
+      const o=document.createElement('div');o.className='orb';o.style.left=x0+'px';o.style.top=y0+'px';L.appendChild(o);
+      FX.sfx('cast');
+      const dx=x1-x0,dy=y1-y0;
+      const an=o.animate([
+        {transform:'translate(-50%,-50%) scale(.3)'},
+        {transform:`translate(calc(-50% + ${dx*0.5}px),calc(-50% + ${dy*0.5-46}px)) scale(1)`},
+        {transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(1.1)`}
+      ],{duration:500,easing:'ease-in'});
+      let raf=0;
+      const tick=()=>{if(!o.isConnected)return;const r=o.getBoundingClientRect();FX.dot(r.left+r.width/2,r.top+r.height/2);raf=requestAnimationFrame(tick);};
+      tick();
+      an.onfinish=()=>{cancelAnimationFrame(raf);o.remove();res();};
+    });
+  },
+  dot(x,y){
+    const L=$('#fx');if(!L)return;
+    const d=document.createElement('div');d.className='dot';d.style.left=x+'px';d.style.top=y+'px';L.appendChild(d);
+    d.animate([{opacity:.8,transform:'translate(-50%,-50%) scale(1)'},{opacity:0,transform:'translate(-50%,-50%) scale(.2)'}],{duration:380}).onfinish=()=>d.remove();
+  },
+  burst(x,y,colors,n){
+    const L=$('#fx');if(!L)return;
+    for(let i=0;i<n;i++){
+      const p=document.createElement('div');p.className='pt';p.style.left=x+'px';p.style.top=y+'px';p.style.background=colors[i%colors.length];L.appendChild(p);
+      const ang=Math.random()*Math.PI*2,d=45+Math.random()*80;
+      p.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`translate(calc(-50% + ${Math.cos(ang)*d}px),calc(-50% + ${Math.sin(ang)*d}px)) scale(.2)`,opacity:0}],{duration:450+Math.random()*250,easing:'ease-out'}).onfinish=()=>p.remove();
+    }
+  },
+  float(txt,x,y,color,size){
+    const L=$('#fx');if(!L)return;
+    const e=document.createElement('div');e.className='float';e.textContent=txt;e.style.left=x+'px';e.style.top=y+'px';e.style.color=color;if(size)e.style.fontSize=size+'px';L.appendChild(e);
+    e.animate([{transform:'translate(-50%,0) scale(.6)',opacity:0},{transform:'translate(-50%,-22px) scale(1.2)',opacity:1,offset:.25},{transform:'translate(-50%,-80px) scale(1)',opacity:0}],{duration:950,easing:'ease-out'}).onfinish=()=>e.remove();
+  },
+  vignette(){
+    const L=$('#fx');if(!L)return;
+    const v=document.createElement('div');v.className='vig';L.appendChild(v);
+    v.animate([{opacity:0},{opacity:1,offset:.25},{opacity:0}],{duration:560}).onfinish=()=>v.remove();
+  },
+  shake(){
+    const m=document.querySelector('main');if(!m)return;
+    m.animate([{transform:'translate(0,0)'},{transform:'translate(-9px,3px)'},{transform:'translate(8px,-3px)'},{transform:'translate(-5px,2px)'},{transform:'translate(0,0)'}],{duration:340});
+  },
+  impact(){
+    const bs=$('#boss');if(!bs)return;
+    bs.classList.remove('hit');void bs.offsetWidth;bs.classList.add('hit');setTimeout(()=>bs.classList.remove('hit'),420);
+    const sl=$('#slash');if(sl){sl.classList.remove('go');void sl.offsetWidth;sl.classList.add('go');}
+    const r=bs.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    FX.burst(cx,cy,['#ffd34d','#ffffff','#ff8a3d'],18);
+    FX.float('−1',cx,r.top+r.height*0.2,'#ffd34d');
+    FX.sfx('hit');
+  },
+  async hit(over,win){
+    FX.pending++;
+    await FX.fly(false);
+    FX.pending--;
+    FX.shown=game.boss;FX.setBar();FX.rage(true);
+    FX.impact();
+    if(over&&win){await sleep(500);FX.win();}
+  },
+  async hurt(over,win){
+    const bs=$('#boss'),pt=$('#party');
+    FX.sfx('roar');
+    if(bs)bs.animate([{transform:'translateX(0) scale(1)'},{transform:'translateX(-80px) scale(1.14)',offset:.45},{transform:'translateX(0) scale(1)'}],{duration:460,easing:'ease-in-out'});
+    await sleep(230);
+    FX.vignette();FX.shake();FX.sfx('hurt');
+    if(pt){
+      pt.classList.remove('ouch');void pt.offsetWidth;pt.classList.add('ouch');setTimeout(()=>pt.classList.remove('ouch'),520);
+      const r=pt.getBoundingClientRect();FX.float('−1',r.left+r.width/2,r.top-6,'#ff6b5b');
+    }
+    if(over&&!win){await sleep(550);FX.lose();}
+  },
+  async miss(){
+    const bs=$('#boss');
+    FX.pending++;
+    const p=FX.fly(true);
+    setTimeout(()=>{if(bs)bs.animate([{transform:'translateX(0) rotate(0)'},{transform:'translateX(70px) rotate(9deg)',offset:.5},{transform:'translateX(0) rotate(0)'}],{duration:420,easing:'ease-out'});},300);
+    await p;
+    FX.pending--;
+    FX.shown=game.boss;FX.setBar();FX.rage();
+    if(bs){const r=bs.getBoundingClientRect();FX.float('MISS',r.left+r.width/2,r.top+r.height*0.25,'#e6ecf7');}
+    FX.sfx('miss');
+  },
+  win(){
+    const bs=$('#boss');if(bs)bs.classList.add('defeated');
+    FX.sfx('win');
+    const L=$('#fx');if(!L)return;
+    const cols=['#ffd34d','#e8564a','#4aa3ff','#6fd068','#c58bff','#ffffff'];
+    for(let i=0;i<90;i++){
+      const c=document.createElement('div');c.className='conf';c.style.left=(Math.random()*100)+'%';c.style.background=cols[i%cols.length];L.appendChild(c);
+      const sway=(Math.random()-.5)*220;
+      c.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:`translate(${sway}px,${innerHeight+40}px) rotate(${360+Math.random()*540}deg)`,opacity:.9}],{duration:1500+Math.random()*1400,delay:Math.random()*500,easing:'ease-in',fill:'both'}).onfinish=()=>c.remove();
+    }
+  },
+  lose(){
+    const pt=$('#party');if(pt)pt.classList.add('down');
+    FX.sfx('lose');
+  },
+  sfx(k){
+    if(!FX.snd)return;
+    try{
+      const C=FX.ctx||(FX.ctx=new (window.AudioContext||window.webkitAudioContext)());
+      if(C.state==='suspended')C.resume();
+      const t=C.currentTime;
+      const tone=(f0,f1,dur,type,vol,delay)=>{
+        delay=delay||0;
+        const o=C.createOscillator(),g=C.createGain();
+        o.type=type;o.frequency.setValueAtTime(f0,t+delay);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+delay+dur);
+        g.gain.setValueAtTime(0.0001,t+delay);g.gain.exponentialRampToValueAtTime(vol,t+delay+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+delay+dur);
+        o.connect(g);g.connect(C.destination);o.start(t+delay);o.stop(t+delay+dur+0.05);
+      };
+      if(k==='cast')tone(300,900,.4,'sine',.08);
+      if(k==='hit'){tone(240,60,.25,'square',.1);tone(900,200,.15,'sawtooth',.05);}
+      if(k==='hurt')tone(150,50,.35,'sawtooth',.1);
+      if(k==='roar')tone(95,60,.3,'sawtooth',.05);
+      if(k==='rage'){tone(80,220,.7,'sawtooth',.09);tone(65,45,.8,'square',.05);tone(880,880,.1,'square',.05,0);tone(880,880,.1,'square',.05,.22);}
+      if(k==='miss')tone(520,250,.22,'triangle',.07);
+      if(k==='win')[523,659,784,1047].forEach((f,i)=>tone(f,f,.3,'triangle',.09,i*.13));
+      if(k==='lose')[392,330,262,196].forEach((f,i)=>tone(f,f*.97,.38,'sawtooth',.07,i*.2));
+    }catch(e){}
+  }
+};
 
 /* ================= STATION ================= */
 const TABLE_OPS=ALL;
@@ -692,6 +1022,7 @@ const ACT={
   score:b=>score(+b.dataset.d),
   ans:b=>answerPress(b.dataset.v==='1'),
   setmode:b=>setMode(b.dataset.mode),
+  setdiff:b=>setDiff(b.dataset.diff),
   resetround:()=>resetRound(),
   hp:b=>adjHP(b.dataset.who,+b.dataset.d),
   num:b=>{if(stn.no.length<3)stn.no+=b.dataset.n;renderStation();},
@@ -741,7 +1072,7 @@ document.addEventListener('keydown',e=>{
   }else if(currentView==='station'&&stn.step==='confirm'&&e.key==='Enter'){startTest();}
 });
 
-window.__logic={OPS,fwdDeck,revDeck,negDeck,evalFwd,LV,game,stn,get records(){return records;},get settings(){return settings;},showView,buildCSV,parseRoster,newTest};
+window.__logic={FX,BOSSES,OPS,fwdDeck,revDeck,negDeck,evalFwd,LV,game,stn,get records(){return records;},get settings(){return settings;},showView,buildCSV,parseRoster,newTest};
 
 applyLock();
 showView(settings.locked?'station':'game');
