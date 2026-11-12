@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ล่าบอสตารางความจริง</title>
+<style>
+:root{
+  --bg:#f6efdc; --paper:#fffaf0; --ink:#2a2118; --muted:#6f6350; --line:#d9ccae;
+  --T:#1f7a45; --Tbg:#d8f0df; --F:#b3261e; --Fbg:#fadbd8;
+  --accent:#8a5a14; --accent-bg:#f1dfb6; --blue:#244d8a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Sarabun","Noto Sans Thai","Leelawadee UI","Thonburi","Tahoma",system-ui,sans-serif;font-size:18px;line-height:1.45;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+[hidden]{display:none!important}
+#topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:var(--ink);color:#f6efdc}
+.brand{font-weight:700;font-size:20px}
+#tabs{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.tab{border:0;border-radius:8px;padding:8px 14px;background:#4a3d2d;color:#f6efdc}
+.tab.active{background:#f1dfb6;color:var(--ink);font-weight:700}
+body.locked #tabs{display:none}
+#unlockBtn{display:none;margin-left:auto;border:0;border-radius:8px;padding:8px 14px;background:#4a3d2d;color:#f6efdc}
+body.locked #unlockBtn{display:block}
+#warn{background:#fadbd8;color:#7a1c16;padding:8px 16px;font-size:16px}
+main{padding:12px 16px;max-width:1280px;margin:0 auto}
+
+.btn{border:2px solid var(--ink);background:var(--paper);border-radius:12px;padding:10px 18px;font-weight:600}
+.btn.primary{background:var(--ink);color:#f6efdc}
+.btn.big{font-size:22px;padding:14px 28px;min-height:56px}
+.btn.danger{border-color:var(--F);color:var(--F)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 6px;font-size:.85em;color:var(--ink)}
+.btn.primary kbd{background:#4a3d2d;border-color:#7a6a52;color:#f6efdc}
+.expr .op.neg{color:#8a2b6e;font-size:1.1em;padding:0 .05em}
+
+/* ---- game ---- */
+.game-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.lv{border:2px solid var(--ink);background:var(--paper);border-radius:10px;padding:8px 14px;font-weight:600}
+.lv.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.lv.mode.on{background:var(--blue);border-color:var(--blue)}
+.btn.ansT,.btn.ansF{min-width:210px;font-size:40px;font-weight:700}
+.btn.ansT{background:#dce8fa;border-color:var(--blue);color:var(--blue)}
+.btn.ansF{background:#f6e6c4;border-color:var(--accent);color:var(--accent)}
+.toggles{margin-left:auto;display:flex;gap:16px;font-size:16px}
+.toggles label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.hp-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:10px}
+.hp{background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:8px 12px}
+.hp h4{margin:0 0 4px;font-size:16px;color:var(--muted)}
+.hp .bar{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.hp .blk{width:26px;height:20px;border-radius:4px;background:var(--line)}
+.hp.cls .blk.on{background:var(--T)}
+.hp.boss .blk.on{background:var(--F)}
+.hp .adj{border:1px solid var(--line);background:#fff;border-radius:6px;width:28px;height:28px;font-weight:700;margin-left:4px}
+.hp.boss{text-align:right}.hp.boss .bar{justify-content:flex-end}
+.qcount{font-weight:700;font-size:18px;color:var(--muted);text-align:center}
+.play{display:grid;grid-template-columns:1fr;gap:12px}
+.play.withhook{grid-template-columns:1fr 300px}
+.stage{background:var(--paper);border:3px solid var(--ink);border-radius:18px;min-height:clamp(250px,calc(100vh - 460px),520px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 20px;text-align:center}
+.qn{color:var(--muted);font-size:18px;margin-bottom:2px}
+.expr{font-size:clamp(70px,16vh,130px);font-weight:700;line-height:1.1;letter-spacing:.04em}
+.expr.small{font-size:clamp(44px,9vh,72px)}
+.expr .op{color:var(--blue);padding:0 .1em}
+.v.T{color:var(--T)}.v.F{color:var(--F)}
+.opname{font-size:26px;color:var(--muted);margin-top:4px}
+.line2{font-size:48px;font-weight:700;margin-top:6px}
+.ask{font-size:60px;font-weight:700;color:var(--accent);margin-top:8px}
+.status{margin-top:10px;font-size:34px;font-weight:700;min-height:56px}
+.status.think{color:var(--muted)}
+.status.count{font-size:80px;color:var(--accent);line-height:1}
+.status.show{color:var(--blue);font-size:40px}
+.status.answer{color:var(--ink)}
+.msg{font-size:34px;font-weight:700}
+.msg small{display:block;font-size:20px;color:var(--muted);font-weight:400;margin-top:10px}
+.msg.win{color:var(--T)}.msg.lose{color:var(--F)}
+.legend{margin-top:8px;font-size:18px;color:var(--muted);text-align:center}
+.controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;position:sticky;bottom:0;background:var(--bg);padding:8px 0;z-index:4}
+.poster{background:var(--accent-bg);border:2px solid var(--accent);border-radius:14px;padding:12px 16px}
+.poster h4{margin:0 0 8px;color:var(--accent)}
+.poster li{margin:6px 0;list-style:none;font-size:20px}
+.poster ul{margin:0;padding:0}
+.poster b{font-size:26px;color:var(--blue);margin-right:6px}
+
+/* ---- station ---- */
+.id-wrap{max-width:520px;margin:10px auto;text-align:center}
+.id-wrap h2{margin:0 0 4px}
+.lead{margin:0 0 10px;color:var(--muted)}
+.idshow{font-size:72px;font-weight:700;min-height:90px;border:3px solid var(--ink);border-radius:16px;background:var(--paper);line-height:90px}
+.idname{font-size:28px;min-height:42px;margin:6px 0;color:var(--blue);font-weight:600}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pad button{min-height:74px;font-size:32px;font-weight:700;border:2px solid var(--ink);border-radius:14px;background:var(--paper)}
+.pad button.ok{background:var(--T);color:#fff;border-color:var(--T)}
+.foot{margin-top:12px;color:var(--muted);font-size:15px}
+.test-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:6px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:5}
+.test-head .who{font-weight:700;font-size:20px}
+.prog{margin-left:auto;font-weight:700;color:var(--accent)}
+.hint{margin:0 0 10px;color:var(--muted)}
+.tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.tcard{background:var(--paper);border:2px solid var(--line);border-radius:14px;padding:8px 10px}
+.tcard h4{margin:0 0 2px;font-size:20px;text-align:center}
+.tcard h4 span{color:var(--muted);font-weight:400;font-size:15px;margin-left:4px}
+.ttable{width:100%;border-collapse:separate;border-spacing:6px}
+.ttable th{font-size:18px;color:var(--blue)}
+.ttable td{text-align:center;font-size:24px;font-weight:700;width:33%}
+.pv{color:var(--ink)}
+.cell{width:100%;min-height:56px;border-radius:10px;border:2px dashed #b9a97f;background:#fff;font-size:26px;font-weight:700;color:var(--muted)}
+/* ระหว่างทำ: ใช้สีน้ำเงิน/น้ำตาล เพื่อไม่ให้เหมือนสีถูก/ผิด */
+.cell.T{background:#dce8fa;border:2px solid var(--blue);color:var(--blue)}
+.cell.F{background:#f6e6c4;border:2px solid var(--accent);color:var(--accent)}
+.cell.ok{background:var(--Tbg);border:2px solid var(--T);color:var(--T);cursor:default}
+.cell.bad{background:var(--Fbg);border:2px solid var(--F);color:var(--F);cursor:default;font-size:20px}
+.res-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.score{font-size:64px;font-weight:700;line-height:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border-radius:999px;padding:4px 12px;font-weight:700;font-size:18px;border:2px solid var(--line);background:var(--paper)}
+.chip.ok{background:var(--Tbg);border-color:var(--T);color:var(--T)}
+.chip.no{background:var(--Fbg);border-color:var(--F);color:var(--F)}
+
+/* ---- results ---- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:10px 14px}
+.stat b{display:block;font-size:32px}
+.stat span{color:var(--muted);font-size:15px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:14px}
+.grp{border-radius:12px;padding:10px 14px;border:2px solid var(--line);background:var(--paper)}
+.grp h4{margin:0}.grp small{color:var(--muted);display:block;margin-bottom:4px}
+.grp.g1{border-color:var(--T)}.grp.g2{border-color:var(--blue)}.grp.g3{border-color:var(--accent)}.grp.g4{border-color:var(--F)}
+.sec{background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:14px}
+.sec h3{margin:0 0 8px}
+.tbl-wrap{overflow:auto}
+table.res{border-collapse:collapse;width:100%;font-size:16px}
+table.res th,table.res td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+table.res td.l{text-align:left}
+table.res .full{color:var(--T);font-weight:700}
+table.res .part{color:var(--F)}
+textarea,input[type=text],input[type=password]{font:inherit;border:2px solid var(--line);border-radius:8px;padding:8px;background:#fff;width:100%}
+textarea{min-height:140px}
+.muted{color:var(--muted)}
+
+#modal{position:fixed;inset:0;background:rgba(42,33,24,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+#modalBody{background:var(--paper);border-radius:16px;padding:20px 24px;max-width:420px;width:100%;border:3px solid var(--ink)}
+#modalBody h3{margin:0 0 10px}
+.err{color:var(--F);min-height:24px;font-size:16px}
+
+@media (max-width:900px){
+  .expr{font-size:72px}.expr.small{font-size:46px}
+  .play.withhook{grid-template-columns:1fr}
+  .hp-row{grid-template-columns:1fr}.hp.boss{text-align:left}.hp.boss .bar{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<div id="warn" hidden>⚠️ เบราว์เซอร์นี้ไม่ยอมให้บันทึกข้อมูลถาวร — ผลจะหายเมื่อปิดหน้านี้ ให้กด "ส่งออก" ทุกครั้งหลังจบ</div>
+<header id="topbar">
+  <div class="brand">⚔️ ล่าบอสตารางความจริง</div>
+  <nav id="tabs">
+    <button class="tab active" data-act="view" data-view="game">🎮 เกม (ครู)</button>
+    <button class="tab" data-act="view" data-view="station">📝 ด่านวัดผล</button>
+    <button class="tab" data-act="view" data-view="results">📊 ผล / ตั้งค่า</button>
+  </nav>
+  <button id="unlockBtn" data-act="unlock">🔒 ครู</button>
+</header>
+<main>
+  <section id="view-game"></section>
+  <section id="view-station" hidden></section>
+  <section id="view-results" hidden></section>
+</main>
+<div id="modal" hidden><div id="modalBody"></div></div>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tv=b=>b?'T':'F';
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ---------- logic ---------- */
+const OPS={
+  not:{sym:'¬',name:'นิเสธ',arity:1,f:p=>!p},
+  and:{sym:'∧',name:'และ',arity:2,f:(p,q)=>p&&q},
+  or: {sym:'∨',name:'หรือ',arity:2,f:(p,q)=>p||q},
+  imp:{sym:'→',name:'ถ้า…แล้ว…',arity:2,f:(p,q)=>(!p)||q},
+  iff:{sym:'↔',name:'ก็ต่อเมื่อ',arity:2,f:(p,q)=>p===q}
+};
+const ALL=['not','and','or','imp','iff'];
+const ROWS2=[[true,true],[true,false],[false,true],[false,false]];
+const HOOKS={
+  not:'กลับค่า T ↔ F',
+  and:'จริงแถวเดียว: T,T',
+  or:'เท็จแถวเดียว: F,F',
+  imp:'เท็จแถวเดียว: T,F (ผิดสัญญา)',
+  iff:'จริงเมื่อค่า “เหมือนกัน”'
+};
+
+/* ---------- storage ---------- */
+const mem={};
+let storageOK=true;
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){storageOK=false;return (k in mem)?mem[k]:d;}},
+  set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){storageOK=false;$('#warn').hidden=false;return false;}}
+};
+let settings=Object.assign({rosterText:'',pin:'1234',locked:false,shuffleRows:false},store.get('logic.settings',{}));
+let records=store.get('logic.records',[]);
+if(!Array.isArray(records))records=[];
+if(!storageOK)$('#warn').hidden=false;
+const saveSettings=()=>store.set('logic.settings',settings);
+const saveRecords=()=>store.set('logic.records',records);
+
+/* ---------- modal ---------- */
+function modal(html,mount){$('#modalBody').innerHTML=html;$('#modal').hidden=false;if(mount)mount();}
+function closeModal(){$('#modal').hidden=true;$('#modalBody').innerHTML='';}
+function askPin(cb){
+  modal(`<h3>🔒 เฉพาะครู</h3><input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN"><div class="err" id="pinErr"></div><div class="row"><button class="btn primary" data-act="pinok">ปลดล็อก</button><button class="btn" data-act="mclose">ยกเลิก</button></div>`,()=>{
+    const inp=$('#pinIn');inp.focus();
+    const go=()=>{if(inp.value===settings.pin){closeModal();cb();}else{$('#pinErr').textContent='PIN ไม่ถูกต้อง';inp.select();}};
+    $('#modalBody').querySelector('[data-act=pinok]').onclick=go;
+    inp.onkeydown=e=>{if(e.key==='Enter')go();};
+  });
+}
+function askConfirm(msg,cb){
+  modal(`<h3>${esc(msg)}</h3><div class="row"><button class="btn danger" data-act="cfyes">ยืนยัน</button><button class="btn" data-act="mclose">ยกเลิก</button></div>`,()=>{
+    $('#modalBody').querySelector('[data-act=cfyes]').onclick=()=>{closeModal();cb();};
+  });
+}
+
+/* ================= GAME ================= */
+const LV={
+  1:{name:'รอบ 1 · วอร์มอัป',ops:['not','and','or'],boss:6,hook:true,rev:false},
+  2:{name:'รอบ 2 · สู้บอส (มีนิเสธปน)',ops:ALL,boss:8,hook:false,rev:false,neg:0.35,cls:2},
+  3:{name:'รอบ 3 · บอสตัวจริง (ย้อนกลับ)',ops:ALL,boss:4,hook:false,rev:true}
+};
+const game={level:1,deck:[],cur:null,phase:'idle',cls:5,clsMax:5,boss:6,bossMax:6,qn:0,hook:true,thai:true,count:0,tick:null,win:false,
+  mode:'gesture',penalty:false,stats:{right:0,total:0,ms:0},t0:0,ans:[],last:null,pendingOver:false,mix:[],negDeck:[]};
+
+function fwdDeck(level){
+  const c=[];
+  LV[level].ops.forEach(op=>{
+    if(OPS[op].arity===1){[true,false].forEach(p=>c.push({kind:'f',op,p}));return;}
+    ROWS2.forEach(([p,q])=>{
+      c.push({kind:'f',op,p,q});
+      // เพิ่มสำเนาแถวที่นักเรียนพลาดบ่อย
+      if(level>=2&&((op==='imp'&&!(p&&q))||(op==='iff'&&p!==q)))c.push({kind:'f',op,p,q});
+    });
+  });
+  return shuffle(c);
+}
+function revDeck(){
+  const c=[],B=[true,false];
+  ALL.forEach(op=>{
+    const o=OPS[op];
+    B.forEach(res=>{
+      if(o.arity===1){
+        const sol=B.filter(p=>o.f(p)===res);
+        if(sol.length===1)c.push({kind:'r',op,res,known:{},ask:['p'],ans:{p:sol[0]}});
+        return;
+      }
+      const pairs=[];B.forEach(p=>B.forEach(q=>{if(o.f(p,q)===res)pairs.push({p,q});}));
+      if(pairs.length===1)c.push({kind:'r',op,res,known:{},ask:['p','q'],ans:pairs[0]});
+      B.forEach(k=>{
+        const sq=B.filter(q=>o.f(k,q)===res);
+        if(sq.length===1)c.push({kind:'r',op,res,known:{p:k},ask:['q'],ans:{p:k,q:sq[0]}});
+        const sp=B.filter(p=>o.f(p,k)===res);
+        if(sp.length===1)c.push({kind:'r',op,res,known:{q:k},ask:['p'],ans:{p:sp[0],q:k}});
+      });
+    });
+  });
+  return shuffle(c);
+}
+function evalFwd(c){
+  const o=OPS[c.op];
+  if(o.arity===1)return o.f(c.p);
+  let p=c.p,q=c.q;
+  if(c.neg==='p')p=!p;
+  if(c.neg==='q')q=!q;
+  const r=o.f(p,q);
+  return c.neg==='all'?!r:r;
+}
+/* โจทย์ที่มีนิเสธปน: ¬p ○ q , p ○ ¬q , ¬(p ○ q) */
+function negDeck(){
+  const c=[];
+  ['and','or','imp','iff'].forEach(op=>['p','q','all'].forEach(neg=>ROWS2.forEach(([p,q])=>c.push({kind:'f',op,p,q,neg}))));
+  return shuffle(c);
+}
+
+function exprHTML(c){
+  const o=OPS[c.op];
+  if(c.kind==='f'){
+    const V=x=>`<span class="v ${tv(x)}">${tv(x)}</span>`;
+    const N='<span class="op neg">¬</span>';
+    let body;
+    if(o.arity===1)body=`<span class="op">${o.sym}</span> ${V(c.p)}`;
+    else{
+      const L=(c.neg==='p'?N:'')+V(c.p),R=(c.neg==='q'?N:'')+V(c.q);
+      body=`${L} <span class="op">${o.sym}</span> ${R}`;
+      if(c.neg==='all')body=`${N}( ${body} )`;
+    }
+    const nm=c.neg?`${o.name} · มีนิเสธ`:o.name;
+    return `<div class="expr">${body}</div>`+(game.thai?`<div class="opname">${nm}</div>`:'');
+  }
+  const form=o.arity===1?`${o.sym}p`:`p <span class="op">${o.sym}</span> q`;
+  let h=`<div class="expr small">${form} เป็น <span class="v ${tv(c.res)}">${tv(c.res)}</span></div>`;
+  if(game.thai)h+=`<div class="opname">${o.name}</div>`;
+  ['p','q'].forEach(k=>{if(k in c.known)h+=`<div class="line2">${k} เป็น <span class="v ${tv(c.known[k])}">${tv(c.known[k])}</span></div>`;});
+  h+=`<div class="ask">${c.ask.join(', ')} = ?</div>`;
+  return h;
+}
+function answerHTML(c){
+  if(c.kind==='f'){const a=evalFwd(c);return `<span class="v ${tv(a)}" style="font-size:1.6em">${tv(a)}</span>`;}
+  return c.ask.map(k=>`${k} = <span class="v ${tv(c.ans[k])}" style="font-size:1.4em">${tv(c.ans[k])}</span>`).join(' , ');
+}
+function draw(){
+  const lv=LV[game.level];let card=null;
+  if(lv.neg){
+    // ปนโจทย์มีนิเสธราว 1 ใน 3 แต่ไม่ติดกันเกิน 2 ข้อ และไม่ห่างเกิน 3 ข้อ
+    const h=game.mix;let useNeg=Math.random()<lv.neg;
+    if(h.length>=2&&h[h.length-1]&&h[h.length-2])useNeg=false;
+    if(h.length>=3&&!h[h.length-1]&&!h[h.length-2]&&!h[h.length-3])useNeg=true;
+    if(useNeg){if(!game.negDeck.length)game.negDeck=negDeck();card=game.negDeck.pop();}
+  }
+  if(!card){
+    if(!game.deck.length)game.deck=lv.rev?revDeck():fwdDeck(game.level);
+    card=game.deck.pop();
+  }
+  game.mix.push(!!card.neg);
+  game.cur=card;game.qn++;game.phase='problem';
+  game.t0=performance.now();game.ans=[];game.last=null;game.pendingOver=false;
+}
+function setLevel(l){
+  clearTimeout(game.tick);
+  const hpCls=LV[l].cls||5; // HP ห้องของแต่ละรอบ (รอบ 2 = 2)
+  Object.assign(game,{level:l,deck:[],cur:null,phase:'idle',cls:hpCls,clsMax:hpCls,boss:LV[l].boss,bossMax:LV[l].boss,qn:0,hook:LV[l].hook,
+    stats:{right:0,total:0,ms:0},ans:[],last:null,pendingOver:false,mix:[],negDeck:[]});
+  renderGame();
+}
+function setMode(m){game.mode=m;setLevel(game.level);}
+/* โหมดกดเอง: นักเรียนออกมากด T/F ระบบตรวจให้เอง */
+function answerPress(v){
+  const g=game;
+  if(g.mode!=='press'||g.phase!=='problem')return;
+  const c=g.cur,need=c.kind==='f'?1:c.ask.length;
+  g.ans.push(v);
+  if(g.ans.length<need){paintGame();return;}
+  const ms=Math.round(performance.now()-g.t0);
+  const ok=c.kind==='f'?(g.ans[0]===evalFwd(c)):c.ask.every((k,i)=>g.ans[i]===c.ans[k]);
+  g.last={ok,ms,given:g.ans.slice()};
+  g.stats.total++;g.stats.ms+=ms;if(ok)g.stats.right++;
+  if(ok)g.boss=Math.max(0,g.boss-1);else if(g.penalty)g.cls=Math.max(0,g.cls-1);
+  g.pendingOver=(g.boss===0||g.cls===0);g.win=(g.boss===0);
+  g.phase='reveal';paintGame();
+}
+function advancePress(){
+  const g=game;
+  if(g.phase==='idle'){draw();}
+  else if(g.phase==='over'){g.cls=g.clsMax;g.boss=g.bossMax;g.qn=0;g.stats={right:0,total:0,ms:0};draw();}
+  else if(g.phase==='reveal'){if(g.pendingOver)g.phase='over';else draw();}
+  else return;
+  paintGame();
+}
+function pressStatus(){
+  const g=game,c=g.cur;
+  if(g.phase==='problem'){
+    const given=g.ans.length?` <small>(${c.ask.map((k,i)=>i<g.ans.length?`${k} = ${tv(g.ans[i])}`:'').filter(Boolean).join(', ')})</small>`:'';
+    const need=c.kind==='f'?null:c.ask[g.ans.length];
+    return `<div class="status think">${need?`ตอบค่าของ <b>${need}</b>`:'ออกมากดคำตอบ: T หรือ F'}${given}</div>`;
+  }
+  if(g.phase==='reveal'){
+    const L=g.last;
+    const eff=L.ok?'บอสเสีย 1 HP':(g.penalty?'ห้องเสีย 1 HP':'ไม่เสียอะไร — ไปข้อต่อไป');
+    return `<div class="status answer">${L.ok?'<span class="v T">✅ ถูกต้อง!</span>':'<span class="v F">❌ ยังไม่ถูก</span>'} &nbsp; คำตอบ: ${answerHTML(c)}</div><div class="muted" style="font-size:20px">${eff} · ใช้เวลา ${(L.ms/1000).toFixed(1)} วินาที</div>`;
+  }
+  return '';
+}
+function pressControls(){
+  const g=game;let h='';
+  if(g.phase==='problem')h+=`<button class="btn big ansT" data-act="ans" data-v="1">T <kbd>T</kbd></button><button class="btn big ansF" data-act="ans" data-v="0">F <kbd>F</kbd></button>`;
+  else h+=`<button class="btn big primary" data-act="adv">ข้อต่อไป <kbd>Space</kbd></button>`;
+  return h+`<button class="btn" data-act="resetround">รีเซ็ตรอบ</button>`;
+}
+function resetRound(){setLevel(game.level);}
+function startCount(){
+  game.phase='count';game.count=3;paintGame();
+  const step=()=>{game.count--;if(game.count<=0){game.phase='show';paintGame();return;}paintGame();game.tick=setTimeout(step,900);};
+  game.tick=setTimeout(step,900);
+}
+function advance(){
+  const g=game;clearTimeout(g.tick);
+  if(g.mode==='press'){advancePress();return;}
+  if(g.phase==='idle'){draw();}
+  else if(g.phase==='over'){g.cls=g.clsMax;g.boss=g.bossMax;g.qn=0;draw();}
+  else if(g.phase==='problem'){startCount();return;}
+  else if(g.phase==='count'){g.phase='show';}
+  else if(g.phase==='show'){g.phase='reveal';}
+  else if(g.phase==='reveal'){score(0);return;}
+  paintGame();
+}
+function score(d){
+  const g=game;clearTimeout(g.tick);
+  if(g.mode==='press'||g.phase!=='reveal')return;
+  if(d>0)g.boss=Math.max(0,g.boss-1);
+  if(d<0)g.cls=Math.max(0,g.cls-1);
+  if(g.boss===0||g.cls===0){g.phase='over';g.win=g.boss===0;}
+  else draw();
+  paintGame();
+}
+function adjHP(who,d){
+  const g=game;
+  if(who==='boss'){g.boss=Math.min(15,Math.max(1,g.boss+d));g.bossMax=Math.max(g.bossMax,g.boss);}
+  else{g.cls=Math.min(9,Math.max(1,g.cls+d));g.clsMax=Math.max(g.clsMax,g.cls);}
+  paintGame();
+}
+function bar(n,max){let h='';for(let i=0;i<max;i++)h+=`<span class="blk ${i<n?'on':''}"></span>`;return h;}
+function stageHTML(){
+  const g=game,c=g.cur;
+  if(g.phase==='idle')return `<div class="msg">พร้อมสู้ <b>${LV[g.level].name}</b> หรือยัง?<small>กด <kbd>Space</kbd> เพื่อเริ่มข้อแรก</small></div>`;
+  if(g.phase==='over')return g.win?`<div class="msg win">🏆 ห้องชนะบอส!<small>กด <kbd>Space</kbd> เพื่อเล่นรอบนี้ใหม่</small></div>`:`<div class="msg lose">💀 ห้องพ่ายแพ้… ลองแก้มืออีกรอบ!<small>กด <kbd>Space</kbd> เพื่อเล่นรอบนี้ใหม่</small></div>`;
+  let st='';
+  if(g.mode==='press')st=pressStatus();
+  else{
+    if(g.phase==='problem')st='<div class="status think">คิดในใจ… (ยังไม่ต้องชู)</div>';
+    if(g.phase==='count')st=`<div class="status count">${g.count}</div>`;
+    if(g.phase==='show')st='<div class="status show">ชู! &nbsp; 🙌 = T &nbsp;&nbsp; ❌ = F</div>';
+    if(g.phase==='reveal')st=`<div class="status answer">คำตอบ: ${answerHTML(c)}</div>`;
+  }
+  return `<div class="qn">ข้อที่ ${g.qn}</div>${exprHTML(c)}${st}`;
+}
+function controlsHTML(){
+  const g=game;
+  if(g.mode==='press'&&(g.phase==='problem'||g.phase==='reveal'))return pressControls();
+  const lab={idle:'เริ่ม',over:'เล่นใหม่',problem:'นับถอยหลัง 3-2-1',count:'ข้าม → ชู!',show:'เฉลย'}[g.phase];
+  let h='';
+  if(g.phase==='reveal'){
+    h+=`<button class="btn big primary" data-act="score" data-d="1">✅ ห้องถูกเกือบหมด → บอส −1 <kbd>1</kbd></button>`;
+    h+=`<button class="btn big" data-act="score" data-d="-1">❌ ห้องผิดเยอะ → ห้อง −1 <kbd>2</kbd></button>`;
+    h+=`<button class="btn big" data-act="score" data-d="0">➖ เสมอ <kbd>3</kbd></button>`;
+  }else h+=`<button class="btn big primary" data-act="adv">${lab} <kbd>Space</kbd></button>`;
+  h+=`<button class="btn" data-act="resetround">รีเซ็ตรอบ</button>`;
+  return h;
+}
+function posterHTML(){
+  const ops=LV[game.level].ops;
+  return `<h4>📌 แถวพิเศษ (ตัวช่วยจำ)</h4><ul>`+ops.map(op=>`<li><b>${OPS[op].sym}</b>${HOOKS[op]}</li>`).join('')+`</ul>`;
+}
+function renderGame(){
+  const g=game;
+  $('#view-game').innerHTML=`
+    <div class="game-top">
+      <div class="row">${[1,2,3].map(l=>`<button class="lv ${g.level===l?'on':''}" data-act="lv" data-lv="${l}">${LV[l].name}</button>`).join('')}</div>
+      <div class="row">
+        <button class="lv mode ${g.mode==='gesture'?'on':''}" data-act="setmode" data-mode="gesture">🙌 ท่าทาง (ทั้งห้อง)</button>
+        <button class="lv mode ${g.mode==='press'?'on':''}" data-act="setmode" data-mode="press">👆 กดเอง (ทีละคน)</button>
+      </div>
+      <div class="toggles">
+        <label id="penLbl" ${g.mode==='press'?'':'hidden'}><input type="checkbox" id="optPen" ${g.penalty?'checked':''}> ตอบผิดแล้วห้องเสีย HP</label>
+        <label><input type="checkbox" id="optHook" ${g.hook?'checked':''}> โปสเตอร์ช่วยจำ</label>
+        <label><input type="checkbox" id="optThai" ${g.thai?'checked':''}> ชื่อตัวเชื่อม</label>
+      </div>
+    </div>
+    <div class="hp-row" id="hprow"></div>
+    <div class="play" id="play"><div><div class="stage" id="stage"></div>
+      <div class="legend" id="legend"></div>
+      <div class="controls" id="controls"></div></div>
+      <aside class="poster" id="poster"></aside></div>`;
+  // blur หลังติ๊ก เพื่อไม่ให้ Space/T/F ไปตกที่ช่องติ๊ก
+  $('#optHook').onchange=e=>{g.hook=e.target.checked;e.target.blur();paintGame();};
+  $('#optThai').onchange=e=>{g.thai=e.target.checked;e.target.blur();paintGame();};
+  $('#optPen').onchange=e=>{g.penalty=e.target.checked;e.target.blur();paintGame();};
+  paintGame();
+}
+function paintGame(){
+  const g=game;if(!$('#stage'))return;
+  const sTxt=(g.mode==='press'&&g.stats.total)?`<br><small>ถูก ${g.stats.right}/${g.stats.total} · เฉลี่ย ${(g.stats.ms/g.stats.total/1000).toFixed(1)} วิ</small>`:'';
+  $('#legend').innerHTML=g.mode==='press'
+    ?'นักเรียนออกมากดคำตอบที่เครื่อง: ปุ่ม <b>T / F</b> บนจอ หรือกดคีย์บอร์ด <kbd>T</kbd> <kbd>F</kbd> (หรือ <kbd>1</kbd> = T, <kbd>2</kbd> = F)'
+    :'ตอบด้วยท่าทาง: <b>T = 🙌 ยกมือสองข้าง</b> &nbsp;|&nbsp; <b>F = ❌ ไขว้แขนเป็นกากบาท</b>';
+  $('#hprow').innerHTML=
+    `<div class="hp cls"><h4>🛡️ HP ห้อง <button class="adj" data-act="hp" data-who="cls" data-d="-1">−</button><button class="adj" data-act="hp" data-who="cls" data-d="1">+</button></h4><div class="bar">${bar(g.cls,g.clsMax)}</div></div>
+     <div class="qcount">${LV[g.level].rev?'โจทย์ย้อนกลับ':'ดูแล้วตอบไว'}${sTxt}</div>
+     <div class="hp boss"><h4>👹 HP บอส <button class="adj" data-act="hp" data-who="boss" data-d="-1">−</button><button class="adj" data-act="hp" data-who="boss" data-d="1">+</button></h4><div class="bar">${bar(g.boss,g.bossMax)}</div></div>`;
+  $('#stage').innerHTML=stageHTML();
+  $('#controls').innerHTML=controlsHTML();
+  $('#poster').innerHTML=posterHTML();
+  $('#poster').hidden=!g.hook;
+  $('#play').classList.toggle('withhook',g.hook);
+}
+
+/* ================= STATION ================= */
+const TABLE_OPS=ALL;
+const stn={step:'id',no:'',t:null,rec:null};
+function parseRoster(){
+  const map={};let idx=0;
+  settings.rosterText.split(/\r?\n/).forEach(line=>{
+    if(!line.trim())return;idx++;
+    const m=line.match(/^\s*(\d+)[\s.,)\-\t]+(.+)$/);
+    if(m)map[+m[1]]=m[2].trim();else map[idx]=line.trim();
+  });
+  return map;
+}
+const nameOf=no=>no?(parseRoster()[+no]||''):'';
+function newTest(){
+  const rows={};
+  TABLE_OPS.forEach(op=>{
+    let r=OPS[op].arity===1?[[true],[false]]:ROWS2.map(x=>x.slice());
+    if(settings.shuffleRows)shuffle(r);
+    rows[op]=r;
+  });
+  return {order:shuffle(TABLE_OPS.slice()),rows,ans:{},times:{},t0:performance.now()};
+}
+const rowKey=r=>r.map(tv).join('');
+function tableHTML(op,t,review){
+  const o=OPS[op],rows=t.rows[op];
+  const head=o.arity===1?`<th>p</th><th>${o.sym}p</th>`:`<th>p</th><th>q</th><th>p ${o.sym} q</th>`;
+  const body=rows.map((r,i)=>{
+    const key=op+':'+i,corr=o.f(...r),a=t.ans[key];
+    const pv=r.map(x=>`<td class="pv ${tv(x)}">${tv(x)}</td>`).join('');
+    let cell;
+    if(review){
+      cell=a===corr?`<button class="cell ok" tabindex="-1">${tv(a)}</button>`:`<button class="cell bad" tabindex="-1">${tv(a)} → ${tv(corr)}</button>`;
+    }else cell=`<button class="cell ${a===undefined?'':tv(a)}" data-act="cell" data-key="${key}">${a===undefined?'?':tv(a)}</button>`;
+    return `<tr>${pv}<td>${cell}</td></tr>`;
+  }).join('');
+  return `<div class="tcard"><h4>${o.sym} <span>${o.name}</span></h4><table class="ttable"><tr>${head}</tr>${body}</table></div>`;
+}
+function distinctDone(){return new Set(records.map(r=>r.no)).size;}
+function renderStation(){
+  const root=$('#view-station');
+  if(stn.step==='id'){
+    const nm=nameOf(stn.no);
+    root.innerHTML=`<div class="id-wrap"><h2>📝 ด่านวัดผล: ตารางค่าความจริง</h2><p class="lead">พิมพ์ <b>เลขที่</b> ของตัวเอง แล้วกด ✓</p>
+      <div class="idshow">${stn.no||'—'}</div><div class="idname">${esc(nm)}</div>
+      <div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-act="num" data-n="${n}">${n}</button>`).join('')}<button data-act="numdel">⌫</button><button data-act="num" data-n="0">0</button><button class="ok" data-act="idok">✓</button></div>
+      <div class="foot">ทำแล้ว ${distinctDone()} คน</div></div>`;
+  }else if(stn.step==='confirm'){
+    const prev=records.filter(r=>r.no===+stn.no).length,nm=nameOf(stn.no);
+    root.innerHTML=`<div class="id-wrap"><div class="idshow">เลขที่ ${stn.no}</div><div class="idname">${esc(nm)}</div>
+      <p>${prev?`เคยทำมาแล้ว ${prev} ครั้ง — ครั้งนี้เป็นครั้งที่ ${prev+1}`:'ทำครั้งแรก'}</p>
+      <p class="lead">เติมตารางค่าความจริงให้ครบทุกช่อง ทำให้ถูกก่อน ไม่ต้องรีบ</p>
+      <div class="row" style="justify-content:center"><button class="btn big primary" data-act="start">เริ่มเลย!</button><button class="btn big" data-act="notme">ไม่ใช่ฉัน</button></div></div>`;
+  }else if(stn.step==='test'){
+    const t=stn.t;
+    root.innerHTML=`<div class="test-head"><div class="who">เลขที่ ${stn.no} ${esc(nameOf(stn.no))}</div><div class="prog" id="prog"></div>
+      <button class="btn primary big" id="submitBtn" data-act="submit" disabled>ส่งคำตอบ</button></div>
+      <p class="hint">แตะช่อง <b>?</b> เพื่อเลือก T หรือ F (แตะซ้ำเพื่อเปลี่ยน) ให้ครบทุกช่อง</p>
+      <div class="tables">${t.order.map(op=>tableHTML(op,t,false)).join('')}</div>`;
+    updateProg();
+  }else if(stn.step==='result'){
+    const r=stn.rec,t=stn.t;
+    const chips=TABLE_OPS.map(op=>{const p=r.per[op],full=p.c===p.n;return `<span class="chip ${full?'ok':'no'}">${OPS[op].sym} ${full?'✓':p.c+'/'+p.n}</span>`;}).join('');
+    root.innerHTML=`<div class="res-head"><div class="score">${r.total}/${r.max}</div><div class="chips">${chips}</div><div class="muted">ใช้เวลา ${Math.round(r.dur/1000)} วินาที</div></div>
+      <p>${r.total===r.max?'🎉 เยี่ยมมาก! ถูกทุกช่อง':'ช่องสีแดง = ตอบผิด (ตัวหลังลูกศรคือคำตอบที่ถูก) ลองดูแล้วจำไว้ แล้วกด "ลองอีกครั้ง" ได้'}</p>
+      <div class="tables">${TABLE_OPS.map(op=>tableHTML(op,t,true)).join('')}</div>
+      <div class="row" style="margin-top:14px"><button class="btn big" data-act="retry">ลองอีกครั้ง</button><button class="btn big primary" data-act="done">เสร็จ — คนต่อไป</button></div>`;
+    window.scrollTo(0,0);
+  }
+}
+function answeredCount(){return Object.keys(stn.t.ans).length;}
+function updateProg(){
+  const n=answeredCount();
+  const p=$('#prog'),b=$('#submitBtn');
+  if(p)p.textContent=`ตอบแล้ว ${n}/18`;
+  if(b)b.disabled=n<18;
+}
+function startTest(){stn.t=newTest();stn.t.t0=performance.now();stn.step='test';renderStation();window.scrollTo(0,0);}
+function submitTest(){
+  const t=stn.t;if(answeredCount()<18)return;
+  const dur=Math.round(performance.now()-t.t0);
+  const per={},ans={},cellMs={};let total=0,max=0;
+  TABLE_OPS.forEach(op=>{
+    const o=OPS[op];let c=0;const byKey={};
+    t.rows[op].forEach((r,i)=>{
+      const corr=o.f(...r),a=t.ans[op+':'+i];
+      if(a===corr)c++;
+      byKey[rowKey(r)]=tv(a);cellMs[op+':'+rowKey(r)]=t.times[op+':'+i];
+    });
+    const canon=o.arity===1?['T','F']:ROWS2.map(rowKey);
+    ans[op]=canon.map(k=>byKey[k]).join('');
+    per[op]={c,n:t.rows[op].length};total+=c;max+=t.rows[op].length;
+  });
+  const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ts:Date.now(),no:+stn.no,name:nameOf(stn.no),dur,total,max,per,ans,order:t.order.slice(),cellMs};
+  records.push(rec);saveRecords();
+  stn.rec=rec;stn.step='result';renderStation();
+}
+
+/* ================= RESULTS ================= */
+const pad2=n=>String(n).padStart(2,'0');
+const fmtTime=ts=>{const d=new Date(ts);return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;};
+function attemptMap(){
+  const cnt={},m={};
+  records.slice().sort((a,b)=>a.ts-b.ts).forEach(r=>{cnt[r.no]=(cnt[r.no]||0)+1;m[r.id]=cnt[r.no];});
+  return m;
+}
+function median(a){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+const GROUPS=[
+  {k:'g1',t:'✅ แม่น + เร็ว',d:'จำได้แล้ว'},
+  {k:'g2',t:'🐢 แม่น + ช้า',d:'เข้าใจ แต่ยังไม่คล่อง — ฝึกซ้ำเร็ว ๆ'},
+  {k:'g3',t:'🎲 ไม่แม่น + เร็ว',d:'อาจเดา — ให้ทำช้าลงและอธิบายเหตุผล'},
+  {k:'g4',t:'🆘 ไม่แม่น + ช้า',d:'ยังไม่เข้าใจ — สอนซ้ำเป็นกลุ่มเล็ก'}
+];
+const ACC_HIGH=15; // จาก 18 ช่อง
+function csvEsc(v){v=String(v==null?'':v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function buildCSV(){
+  const att=attemptMap();
+  const head=['เลขที่','ชื่อ','ครั้งที่','เวลาที่ทำ','คะแนน','เต็ม','นิเสธ (/2)','และ (/4)','หรือ (/4)','ถ้า-แล้ว (/4)','ก็ต่อเมื่อ (/4)','เวลา (วินาที)','คำตอบที่เลือก (แถว TT,TF,FT,FF ; นิเสธ T,F) ตามลำดับ นิเสธ|และ|หรือ|ถ้า-แล้ว|ก็ต่อเมื่อ'];
+  const rows=records.slice().sort((a,b)=>a.no-b.no||a.ts-b.ts).map(r=>[r.no,r.name,att[r.id],fmtTime(r.ts),r.total,r.max,...TABLE_OPS.map(op=>r.per[op].c),(r.dur/1000).toFixed(1),TABLE_OPS.map(op=>r.ans[op]).join('|')]);
+  return '﻿'+[head,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
+}
+function download(name,text,mime){
+  const blob=new Blob([text],{type:mime});const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);
+}
+const stamp=()=>{const d=new Date();return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}`;};
+function renderResults(){
+  const root=$('#view-results');
+  const att=attemptMap();
+  const sorted=records.slice().sort((a,b)=>a.no-b.no||a.ts-b.ts);
+  const firstByNo={};records.slice().sort((a,b)=>a.ts-b.ts).forEach(r=>{if(!(r.no in firstByNo))firstByNo[r.no]=r;});
+  const firsts=Object.values(firstByNo);
+  const medDur=firsts.length>=4?median(firsts.map(r=>r.dur)):90000;
+  const grp={g1:[],g2:[],g3:[],g4:[]};
+  firsts.forEach(r=>{const hi=r.total>=ACC_HIGH,fast=r.dur<=medDur;grp[hi?(fast?'g1':'g2'):(fast?'g3':'g4')].push(r.no);});
+  const roster=parseRoster();
+  const missing=Object.keys(roster).map(Number).filter(n=>!(n in firstByNo)).sort((a,b)=>a-b);
+  const avg=firsts.length?(firsts.reduce((s,r)=>s+r.total,0)/firsts.length).toFixed(1):'–';
+  const groupHTML=GROUPS.map(g=>`<div class="grp ${g.k}"><h4>${g.t} (${grp[g.k].length})</h4><small>${g.d}</small>${grp[g.k].sort((a,b)=>a-b).join(', ')||'<span class="muted">—</span>'}</div>`).join('');
+  const rowsHTML=sorted.map(r=>{
+    const first=att[r.id]===1;
+    let gl='';
+    if(first){const hi=r.total>=ACC_HIGH,fast=r.dur<=medDur;gl=GROUPS[hi?(fast?0:1):(fast?2:3)].t;}
+    return `<tr><td>${r.no}</td><td class="l">${esc(r.name)}</td><td>${att[r.id]}</td><td><b>${r.total}</b>/${r.max}</td>${TABLE_OPS.map(op=>{const p=r.per[op];return `<td class="${p.c===p.n?'full':'part'}">${p.c}/${p.n}</td>`;}).join('')}<td>${(r.dur/1000).toFixed(0)}</td><td class="l">${gl}</td></tr>`;
+  }).join('');
+  root.innerHTML=`
+    <div class="cards">
+      <div class="stat"><b>${firsts.length}</b><span>คนที่ทำแล้ว</span></div>
+      <div class="stat"><b>${records.length}</b><span>จำนวนครั้งทั้งหมด</span></div>
+      <div class="stat"><b>${avg}</b><span>คะแนนเฉลี่ยครั้งแรก (/18)</span></div>
+      <div class="stat"><b>${firsts.length?Math.round(medDur/1000):'–'}</b><span>เวลามัธยฐานครั้งแรก (วินาที)</span></div>
+    </div>
+    <div class="sec"><h3>จัดกลุ่มจากครั้งแรก <span class="muted" style="font-size:15px;font-weight:400">แม่น = ถูก ≥ ${ACC_HIGH}/18 · เร็ว = เวลา ≤ มัธยฐานของห้อง</span></h3><div class="groups">${groupHTML}</div>
+      ${roster&&Object.keys(roster).length?`<p><b>ยังไม่ได้ทำ:</b> ${missing.length?missing.map(n=>n+(roster[n]?' '+esc(roster[n]):'')).join(' · '):'ครบทุกคนแล้ว 🎉'}</p>`:''}</div>
+    <div class="sec"><h3>ผลรายครั้ง</h3><div class="tbl-wrap"><table class="res"><tr><th>เลขที่</th><th>ชื่อ</th><th>ครั้งที่</th><th>คะแนน</th><th>¬</th><th>∧</th><th>∨</th><th>→</th><th>↔</th><th>วินาที</th><th>กลุ่ม (ครั้งแรก)</th></tr>${rowsHTML||'<tr><td colspan="11" class="muted">ยังไม่มีข้อมูล</td></tr>'}</table></div></div>
+    <div class="sec"><h3>เก็บข้อมูล</h3><div class="row">
+      <button class="btn primary" data-act="csv">⬇️ ส่งออก CSV (เปิดใน Excel)</button>
+      <button class="btn" data-act="jsonout">💾 สำรองไฟล์ (.json)</button>
+      <label class="btn" style="cursor:pointer">📂 รวมไฟล์สำรองจากเครื่องอื่น<input type="file" id="jsonIn" accept=".json,application/json" hidden></label>
+      <button class="btn danger" data-act="wipe">🗑️ ล้างข้อมูลทั้งหมด</button></div>
+      <p class="muted" id="ioMsg" style="margin:8px 0 0"></p></div>
+    <div class="sec"><h3>ตั้งค่า</h3>
+      <p><b>รายชื่อนักเรียน</b> (ไม่บังคับ) — พิมพ์ชื่อบรรทัดละคน ลำดับบรรทัด = เลขที่ หรือพิมพ์ "12 ชื่อ" เพื่อระบุเลขที่เอง เครื่องจะแสดงชื่อให้นักเรียนยืนยันตัวเอง</p>
+      <textarea id="rosterTx" placeholder="1 สมชาย&#10;2 สมหญิง">${esc(settings.rosterText)}</textarea>
+      <div class="row" style="margin:8px 0"><button class="btn" data-act="saveroster">บันทึกรายชื่อ</button></div>
+      <div class="row"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="shufRows" ${settings.shuffleRows?'checked':''}> สลับลำดับแถวในตาราง (ยากขึ้น — ทดสอบว่าเข้าใจ ไม่ใช่จำตำแหน่ง)</label></div>
+      <div class="row" style="margin-top:8px"><span>PIN ครู:</span><input type="text" id="pinNew" value="${esc(settings.pin)}" style="max-width:120px"><button class="btn" data-act="savepin">บันทึก PIN</button></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+      <button class="btn big primary" data-act="lock">🔒 ล็อกเครื่องนี้เป็น "เครื่องวัดผล"</button>
+      <p class="muted" style="margin:6px 0 0">ล็อกแล้วจะเห็นเฉพาะหน้าด่านวัดผล นักเรียนเข้าหน้านี้ไม่ได้ ปลดล็อกด้วยปุ่ม 🔒 มุมขวาบน + PIN</p></div>`;
+  const jin=$('#jsonIn');
+  jin.onchange=()=>{
+    const f=jin.files[0];if(!f)return;
+    f.text().then(txt=>{
+      try{
+        const arr=JSON.parse(txt);const list=Array.isArray(arr)?arr:arr.records;
+        const ids=new Set(records.map(r=>r.id));let add=0;
+        (list||[]).forEach(r=>{if(r&&r.id&&r.per&&r.ans&&!ids.has(r.id)){records.push(r);ids.add(r.id);add++;}});
+        saveRecords();renderResults();$('#ioMsg').textContent=`รวมข้อมูลเพิ่ม ${add} รายการ`;
+      }catch(e){$('#ioMsg').textContent='อ่านไฟล์ไม่ได้ — ต้องเป็นไฟล์สำรอง (.json) จากหน้านี้';}
+    });
+  };
+  $('#shufRows').onchange=e=>{settings.shuffleRows=e.target.checked;saveSettings();};
+}
+
+/* ================= NAV / LOCK ================= */
+let currentView='game';
+function showView(v){
+  if(settings.locked&&v!=='station')v='station';
+  currentView=v;
+  ['game','station','results'].forEach(k=>{$('#view-'+k).hidden=(k!==v);});
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  if(v==='game')renderGame();
+  if(v==='station')renderStation();
+  if(v==='results')renderResults();
+}
+function applyLock(){document.body.classList.toggle('locked',!!settings.locked);}
+
+/* ================= EVENTS ================= */
+const ACT={
+  view:b=>showView(b.dataset.view),
+  lv:b=>setLevel(+b.dataset.lv),
+  adv:()=>advance(),
+  score:b=>score(+b.dataset.d),
+  ans:b=>answerPress(b.dataset.v==='1'),
+  setmode:b=>setMode(b.dataset.mode),
+  resetround:()=>resetRound(),
+  hp:b=>adjHP(b.dataset.who,+b.dataset.d),
+  num:b=>{if(stn.no.length<3)stn.no+=b.dataset.n;renderStation();},
+  numdel:()=>{stn.no=stn.no.slice(0,-1);renderStation();},
+  idok:()=>{if(!stn.no||+stn.no<1)return;stn.no=String(+stn.no);stn.step='confirm';renderStation();},
+  notme:()=>{stn.no='';stn.step='id';renderStation();},
+  start:()=>startTest(),
+  cell:b=>{
+    if(stn.step!=='test')return;
+    const key=b.dataset.key,t=stn.t,cur=t.ans[key];
+    if(cur===undefined)t.times[key]=Math.round(performance.now()-t.t0);
+    const nv=cur===undefined?true:!cur;
+    t.ans[key]=nv;b.className='cell '+tv(nv);b.textContent=tv(nv);updateProg();
+  },
+  submit:()=>submitTest(),
+  retry:()=>startTest(),
+  done:()=>{stn.no='';stn.step='id';stn.t=null;stn.rec=null;renderStation();},
+  csv:()=>download(`truth-table-results-${stamp()}.csv`,buildCSV(),'text/csv;charset=utf-8'),
+  jsonout:()=>download(`truth-table-backup-${stamp()}.json`,JSON.stringify({version:1,records},null,1),'application/json'),
+  wipe:()=>askConfirm('ลบผลของนักเรียนทั้งหมดบนเครื่องนี้? (ควรส่งออกก่อน)',()=>{records=[];saveRecords();renderResults();}),
+  saveroster:()=>{settings.rosterText=$('#rosterTx').value;saveSettings();renderResults();$('#ioMsg').textContent='บันทึกรายชื่อแล้ว';},
+  savepin:()=>{const v=$('#pinNew').value.trim();if(v){settings.pin=v;saveSettings();$('#ioMsg').textContent='เปลี่ยน PIN แล้ว';}},
+  lock:()=>{settings.locked=true;saveSettings();applyLock();stn.step='id';stn.no='';showView('station');},
+  unlock:()=>askPin(()=>{settings.locked=false;saveSettings();applyLock();showView('results');}),
+  mclose:()=>closeModal()
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const f=ACT[b.dataset.act];if(f)f(b,e);
+});
+document.addEventListener('keydown',e=>{
+  if(!$('#modal').hidden)return;
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='textarea'||(tag==='input'&&e.target.type!=='checkbox'))return;
+  if(currentView==='game'){
+    if(game.mode==='press'&&game.phase==='problem'){
+      if(e.code==='KeyT'||e.key==='1'){answerPress(true);return;}
+      if(e.code==='KeyF'||e.key==='2'){answerPress(false);return;}
+      if(e.code==='Space'||e.key==='Enter'){e.preventDefault();return;}
+    }
+    if(e.code==='Space'||e.key==='Enter'){e.preventDefault();advance();}
+    else if(game.mode==='gesture'&&game.phase==='reveal'&&(e.key==='1'||e.key==='2'||e.key==='3')){score({'1':1,'2':-1,'3':0}[e.key]);}
+  }else if(currentView==='station'&&stn.step==='id'){
+    if(/^[0-9]$/.test(e.key)){if(stn.no.length<3)stn.no+=e.key;renderStation();}
+    else if(e.key==='Backspace'){stn.no=stn.no.slice(0,-1);renderStation();}
+    else if(e.key==='Enter'){ACT.idok();}
+  }else if(currentView==='station'&&stn.step==='confirm'&&e.key==='Enter'){startTest();}
+});
+
+window.__logic={OPS,fwdDeck,revDeck,negDeck,evalFwd,LV,game,stn,get records(){return records;},get settings(){return settings;},showView,buildCSV,parseRoster,newTest};
+
+applyLock();
+showView(settings.locked?'station':'game');
+})();
+</script>
+</body>
+</html>
